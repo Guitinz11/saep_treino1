@@ -1,23 +1,6 @@
 ﻿const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const API_ORIGIN = window.SAEP_API_URL || (location.protocol === 'file:' ? 'http://localhost:8889' : '');
 const state = { products: [], type: 'entrada' };
-const testStyles = document.createElement('link');
-testStyles.rel = 'stylesheet';
-testStyles.href = './test-mode.css';
-document.head.append(testStyles);
-function createTestNotice() {
-    const notice = document.createElement('aside');
-    notice.className = 'test-notice';
-    notice.setAttribute('role', 'note');
-    const title = document.createElement('strong');
-    title.textContent = 'Ambiente de testes';
-    const description = document.createElement('span');
-    description.textContent = 'Use somente dados fictícios. O login é demonstrativo e a API é pública. Os dados do seu MySQL local não foram importados.';
-    notice.append(title, description);
-    return notice;
-}
-$('#loginForm').before(createTestNotice());
-$('.main header').after(createTestNotice());
 const money = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
 const number = v => new Intl.NumberFormat('pt-BR').format(Number(v)||0);
 const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
