@@ -8,9 +8,9 @@ const movimentacoes = require('./routes/movimentacoes');
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.resolve(__dirname, '../saep_front')));
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/api', (req, res) => res.send('Sua API esta funcionando.'));
+app.get('/api', (req, res) => res.json({ status: 'ok', mensagem: 'API funcionando' }));
 app.use('/produtos', produtos);
 app.use('/movimentacoes', movimentacoes);
 
