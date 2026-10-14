@@ -1,15 +1,30 @@
 ﻿const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-// Use the Express backend even if the page is open on another local port.
-const isLocalHost = location.protocol === 'file:' || ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
-const API_ORIGIN = window.SAEP_API_URL || (isLocalHost ? (location.protocol === 'file:' ? 'http://localhost:3000' : `${location.protocol}//${location.hostname}:3000`) : '');
+const API_ORIGIN = window.SAEP_API_URL || (location.protocol === 'file:' ? 'http://localhost:8889' : '');
 const state = { products: [], type: 'entrada' };
+const testStyles = document.createElement('link');
+testStyles.rel = 'stylesheet';
+testStyles.href = './test-mode.css';
+document.head.append(testStyles);
+function createTestNotice() {
+    const notice = document.createElement('aside');
+    notice.className = 'test-notice';
+    notice.setAttribute('role', 'note');
+    const title = document.createElement('strong');
+    title.textContent = 'Ambiente de testes';
+    const description = document.createElement('span');
+    description.textContent = 'Use somente dados fictícios. O login é demonstrativo e a API é pública. Os dados do seu MySQL local não foram importados.';
+    notice.append(title, description);
+    return notice;
+}
+$('#loginForm').before(createTestNotice());
+$('.main header').after(createTestNotice());
 const money = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
 const number = v => new Intl.NumberFormat('pt-BR').format(Number(v)||0);
 const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 let toastTimer;
 function toast(message,bad=false){const el=$('#toast');el.textContent=message;el.classList.remove('hide','bad');if(bad)el.classList.add('bad');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.add('hide'),4500)}
-async function api(url,options={}){const target=`${API_ORIGIN}${url}`;let r;try{r=await fetch(target,{...options,headers:{...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})}})}catch{throw new Error(`Não consegui conectar à API em ${API_ORIGIN||location.origin}. Para uso local, abra http://localhost:3000; para front hospedado, configure a URL pública do backend.`)}const type=r.headers.get('content-type')||'';const data=type.includes('application/json')?await r.json():await r.text();if(!r.ok)throw new Error(data?.erro||data?.mensagem||`A rota ${target} respondeu HTTP ${r.status} no servidor ${API_ORIGIN||location.origin}.`);return data;}
+async function api(url,options={}){const target=`${API_ORIGIN}${url}`;let r;try{r=await fetch(target,{...options,headers:{...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})}})}catch{throw new Error('Não consegui conectar à API. Para uso local, execute npm run dev e abra http://localhost:8889.')}const type=r.headers.get('content-type')||'';const data=type.includes('application/json')?await r.json():await r.text();if(!r.ok)throw new Error(data?.erro||data?.mensagem||`A API respondeu HTTP ${r.status}.`);return data;}
 const labels={home:['Visão geral','PAINEL DE CONTROLE'],products:['Produtos','CATÁLOGO'],moves:['Movimentações','OPERAÇÃO'],reports:['Relatórios','ANÁLISE']};
 function go(page){if(!labels[page])page='home';$$('.view').forEach(x=>x.classList.toggle('show',x.id===page));$$('.nav').forEach(x=>x.classList.toggle('active',x.dataset.page===page));$('#title').textContent=labels[page][0];$('#crumb').textContent=labels[page][1];if(page==='products')renderProducts();if(page==='moves')loadExits();location.hash=page;}
 $$('.nav').forEach(b=>b.addEventListener('click',()=>go(b.dataset.page)));$$('[data-open]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.open)));window.addEventListener('hashchange',()=>go(location.hash.slice(1)));
@@ -33,5 +48,3 @@ $('#moveForm').addEventListener('submit',async e=>{e.preventDefault();const d=Ob
 $('#reportForm').addEventListener('submit',async e=>{e.preventDefault();const ini=$('#dateStart').value,fim=$('#dateEnd').value;if(ini>fim){toast('A data inicial deve ser anterior à data final.',true);return}const q=new URLSearchParams({dataInicial:ini,dataFinal:fim});try{const [period,top]=await Promise.all([api(`/movimentacoes/periodo?${q}`),api(`/movimentacoes/maiores-saidas?${q}`)]);$('#periodRows').innerHTML=period.length?period.map(x=>`<tr><td><strong>${esc(x.nome_produto)}</strong></td><td>${number(x.total_entradas)}</td><td>${number(x.total_saidas)}</td><td>${number(x.saldo_periodo)}</td><td>${money(x.valor_entradas)}</td><td>${money(x.valor_saidas)}</td></tr>`).join(''):emptyRow(6,'Nenhuma movimentação no período.');$('#topRows').innerHTML=top.length?top.map((x,i)=>`<tr><td><span class="pill">${i+1}</span></td><td><strong>${esc(x.produto)}</strong></td><td>${esc(x.categoria)}</td><td>${number(x.total_saidas)}</td></tr>`).join(''):emptyRow(4,'Nenhuma saída no período.');toast('Relatórios atualizados.')}catch(err){toast(err.message,true)}});
 async function start(){go(location.hash.slice(1)||'home');$('#moveForm [name=data]').value=today();try{await Promise.all([loadProducts(),loadCategories(),loadLimits()]);$('#apiState').textContent='API conectada';$('#apiDot').classList.add('ok');}catch(e){$('#apiState').textContent='API indisponível';$('#apiDot').classList.remove('ok');toast(e.message,true)}}
 if(sessionStorage.getItem('saep-login')==='1'){$('#login').classList.add('hide');$('#shell').classList.remove('hide');start()}
-
-
