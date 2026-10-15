@@ -3,14 +3,9 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "test": "node scripts/testar-produto.js",
-    "test:unit": "node --import tsx --test tests/*.test.ts",
-    "typecheck": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate",
-    "db:import:mysql": "tsx scripts/importar-mysql.ts",
-    "dev": "netlify dev --port 8889",
-    "start": "npx nodemon server.js"
-  },
+  "start": "node server.js",
+  "dev": "nodemon server.js"
+},
   "dependencies": {
     "@netlify/database": "^2.0.1",
     "@netlify/functions": "^6.0.2",
